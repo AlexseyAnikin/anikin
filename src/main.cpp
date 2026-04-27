@@ -6,16 +6,6 @@
 #include <stdexcept>
 #include <string>
 
-struct AesCipherParams {
-    static const size_t KEY_SIZE = 32;             // AES-256 key size
-    static const size_t IV_SIZE = 16;              // AES block size (IV length)
-    const EVP_CIPHER *cipher = EVP_aes_256_cbc();  // Cipher algorithm
-
-    int encrypt;                              // 1 for encryption, 0 for decryption
-    std::array<unsigned char, KEY_SIZE> key;  // Encryption key
-    std::array<unsigned char, IV_SIZE> iv;    // Initialization vector
-};
-
 
 
 int main(int argc, char *argv[]) {
