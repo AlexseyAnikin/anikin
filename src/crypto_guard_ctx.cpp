@@ -100,7 +100,7 @@ namespace
 
         if(result == 0)
         {
-            throw std::runtime_error{"Failed to create key from passwors"};
+            throw std::runtime_error{"Failed to create key from password"};
         }
 
         return params;
@@ -122,170 +122,12 @@ public:
 
     void EncryptFile(std::istream& inStream, std::ostream& outStream, std::string_view password)
     {
-        auto params = CreateCipherParamsFromPassword(password);
-        auto ctx = MakeCipherCtx();
-
-        constexpr int ENCRYPT_MODE = 1;
-
-        if(EVP_CipherInit_ex(ctx.get(),
-                             params.cipher,
-                             nullptr,
-                             params.key.data(),
-                             params.iv.data(),
-                             ENCRYPT_MODE) != 1)
-                             {
-                                throw std::runtime_error{"EVP_CipherInit_ex failed during encryption"};
-                             }
-        
-        constexpr std::size_t BUFFER_SIZE = 4096;
-
-        std::array<unsigned char, BUFFER_SIZE> inBuffer{};
-        std::array<unsigned char, BUFFER_SIZE + EVP_MAX_BLOCK_LENGTH> outBuffer{};
-        
-        while(inStream)
-        {
-            inStream.read(
-                reinterpret_cast<char*>(inBuffer.data()),
-                static_cast<std::streamsize>(inBuffer.size())
-            );
-
-            const std::streamsize bytesRead = inStream.gcount();
-
-            if(bytesRead <= 0)
-            {
-                break;
-            }
-
-            int outLen = 0;
-
-            if(EVP_CipherUpdate(
-                ctx.get(),
-                outBuffer.data(),
-                &outLen,
-                inBuffer.data(),
-                static_cast<int>(bytesRead)) != 1)
-                {
-                    throw std::runtime_error{"EVP_CipherUpdate failed during ebcryption"}
-                }
-
-                outStream.write(
-                    reinterpret_cast<const char*>(outBuffer.data()),
-                    outLen
-                );
-
-                if(!outStream)
-                {
-                    throw std::runtime_error{"Failed to write ebcrypted data"};
-                }
-        }
-
-        if(!inStream.eof())
-        {
-            throw std::runtime_error{"Failed to read input data"};
-        }
-
-        int finalLen = 0;
-
-        if(EVP_CipherFinal_ex(ctx.get(), outBuffer.data(), &finalLen) != 1)
-        {
-            throw std::runtime_error{"EVP_CipherFinal_ex failed during encryption"};
-        }
-
-        outStream.write(
-            reinterpret_cast<const char*>(outBuffer.data()),
-            finalLen
-        );
-
-        if(!outStream)
-        {
-            throw std::runtime_error{"Failed to write final encrypted block"};
-        }
-
+        ProcessCipher(inStream, outStream, password, 1);
     }
 
     void DecryptFile(std::istream& inStream, std::ostream& outStream, std::string_view password)
     {
-        auto params = CreateCipherParamsFromPassword(password);
-        auto ctx = MakeCipherCtx();
-
-        constexpr int DECRYPT_MODE = 0;
-
-        if(EVP_CipherInit_ex(
-            ctx.get(),
-            params.cipher,
-            nullptr,
-            params.key.data(),
-            params.iv.data(),
-            DECRYPT_MODE) != 1)
-            {
-                throw std::runtime_error{"EVP_CipherInit_ex failed during decryption"}
-            }
-
-        constexpr std::size_t BUFFER_SIZE = 4096;
-
-        std::array<unsigned char, BUFFER_SIZE> inBuffer{};
-        std::array<unsigned char, BUFFER_SIZE + EVP_MAX_BLOCK_LENGTH> outBuffer{};
-
-        while(inStream)
-        {
-            inStream.read(
-                reinterpret_cast<char*>(inBuffer.data()),
-                static_cast<std::streamsize>(inBuffer.size())
-            );
-
-            const std::streamsize bytesRead = inStream.gcount();
-
-            if(bytesRead <= 0)
-            {
-                break;
-            }
-            
-            int  outLen = 0;
-
-            if(EVP_CipherUpdate(
-                ctx.get(),
-                outBuffer.data(),
-                &outLen,
-                inBuffer.data(),
-                static_cast<int>(bytesRead)) != 1)
-                {
-                    throw std::runtime_error{"EVP_CipherUpdate failed during decryption"}
-                }
-            
-            outStream.write(
-                reinterpret_cast<const char*>(outBuffer.data()),
-                outLen
-            );
-
-            if(!outStream)
-            {
-                throw std::runtime_error{"Failed to write decrypted data"};
-            }
-        }
-
-        if(!inStream.eof())
-        {
-            throw std::runtime_error{"Failed to read encrypted input data"};
-        }
-
-        int finalLen = 0;
-
-        if(EVP_CipherFinal_ex(ctx.get(), outBuffer.data(), &finalLen) != 1)
-        {
-            throw std::runtime_error{
-                "EVP_CipherFinal_ex failed during decryption. Wrong password or corrupted file"
-            };
-        }
-
-        outStream.write(
-            reinterpret_cast<const char*>(outBuffer.data()),
-            finalLen
-        );
-
-        if(!outStream)
-        {
-            throw std::runtime_error{"failed to write finaldecrypted block"};
-        }
+        ProcessCipher(inStream, outStream, password, 0);
     }
 
     std::string CalculateChecksum(std::istream& inStream)
@@ -347,6 +189,94 @@ public:
         return result.str();
 
     }
+
+private:
+    void ProcessCipher(std::istream& inStream,
+                        std::ostream& outStream,
+                        std::string_view password,
+                        int mode)
+    {
+        auto params = CreateCipherParamsFromPassword(password);
+        auto ctx = MakeCipherCtx();
+
+        if(EVP_CipherInit_ex(
+                ctx.get(),
+                params.cipher,
+                nullptr,
+                params.key.data(),
+                params.iv.data(),
+                mode) != 1)
+                {
+                    throw std::runtime_error{"EVP_CIpherInit_ex failed"};
+                }
+
+        constexpr std::size_t BUFFER_SIZE = 4096;
+
+        std::array<unsigned char, BUFFER_SIZE> inBuffer{};
+        std::array<unsigned char, BUFFER_SIZE + EVP_MAX_BLOCK_LENGTH> outBuffer{};
+
+        while(inStream)
+        {
+            inStream.read(
+                reinterpret_cast<char*>(inBuffer.data()),
+                static_cast<std::streamsize>(inBuffer.data())
+            );
+
+            const std::streamsize bytesRead = inStream.gcount();
+
+            if(bytesRead <= 0)
+            {
+                break;
+            }
+
+            int outLen = 0;
+
+            if(EVP_CipherUpdate(
+                    ctx.get(),
+                    outBuffer.data(),
+                    &outLen,
+                    inBuffer.data(),
+                    static_cast<int>(bytesRead)) != 1)
+                    {
+                        throw std::runtime_error{"EVP_CipherUpdate failed"}
+                    }
+
+            outStream.write(
+                reinterpret_cast<const char*>(outBuffer.data()),
+                outLen
+            );
+
+            if(!outStream)
+            {
+                throw std::runtime_error{"Failed to write output data"};
+            }
+        }
+
+        if(!inStream.eof())
+        {
+            throw std::runtime_error{"Failed to read input data"};
+        }
+
+        int finalLen = 0;
+
+        if(EVP_CipherFinal_ex(ctx.get(), outBuffer.data(), &finalLen) != 1)
+        {
+            throw std::runtime_error{
+                mode == 1 ? "EVP_CipherFinal_ex failed encryption"
+                          : "EVP_CipherFinal_ex failed during decryption. Wrong password or corrupted file"
+            };
+        }
+
+        outStream.write(
+            reinterpret_cast<const char*>(outBuffer.data()),
+            finalLen
+        );
+
+        if(!outStream)
+        {
+            throw std::runtime_error{"Failed to write final block"};
+        }
+    }
 };
 
 CryptoGuardCtx::CryptoGuardCtx() : pImpl_(std::make_unique<Impl>()) {};
@@ -377,3 +307,4 @@ std::string CryptoGuardCtx::CalculateChecksum(std::istream& inStream)
 }
 
 }  // namespace CryptoGuard
+
