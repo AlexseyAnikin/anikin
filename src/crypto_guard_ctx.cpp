@@ -38,10 +38,20 @@ namespace
     };
     
 
-    using EvpCipherCtxDeleter = std::unique_ptr<EVP_MD_CTX, EvpCipherCtxDeleter>;
+    using EvpCipherCtxPtr = std::unique_ptr<EVP_MD_CTX, EvpCipherCtxDeleter>;
     using EvpMdCtxPtr = std::unique_ptr<EVP_MD_CTX, EvpMdCtxDeleter>;
 
-    
+    EvpCipherCtxPtr MakeCipherCtx()
+    {
+        EvpCipherCtxPtr ctx{EVP_CIPHER_CTX_new()};
+
+        if(!ctx)
+        {
+            throw std::runtime_error{"Failed to create EVP_CIPHER_CTX"};
+        }
+
+        return ctx;
+    }
 
     EvpMdCtxPtr MakeMdCtx()
     {
