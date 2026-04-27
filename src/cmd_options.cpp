@@ -1,6 +1,6 @@
 #include "cmd_options.h"
 
-#include <boost/programm_options.hpp>
+#include <boost/program_options.hpp>
 
 #include <iostream>
 #include <stdexcept>
@@ -10,11 +10,11 @@ namespace CryptoGuard {
 
 namespace po = boost::program_options;
 
-ProgramOptions::ProgramOptions() : desc_("Allowed options") {}
+ProgramOptions::ProgramOptions() : command_(COMMAND_TYPE::CHECKSUM), desc_("Allowed options") {}
 
 ProgramOptions::~ProgramOptions() = default;
 
-void ProgramOptions::Parse(int argc, char *argv[]) 
+void ProgramOptions::Parse(int argc, char* argv[]) 
 {
     desc_.add_options()
         ("help,h", "Show help message")
@@ -24,7 +24,7 @@ void ProgramOptions::Parse(int argc, char *argv[])
         "Input file path")
         ("output,o", po::value<std::string>(&outputFile_),
         "Output file path")
-        ("password,p", po::value<std::sting>(&password_),
+        ("password,p", po::value<std::string>(&password_),
         "Password for encrypt/decrypt");
 
     po::variables_map vm;
@@ -43,7 +43,7 @@ void ProgramOptions::Parse(int argc, char *argv[])
 
         const std::string command = vm["command"].as<std::string>();
 
-        const auto commandIt - commandMapping_.find(command);
+        const auto commandIt = commandMapping_.find(command);
         if(commandIt == commandMapping_.end())
         {
             throw std::runtime_error{"Unsupported command: " + command};
@@ -51,7 +51,7 @@ void ProgramOptions::Parse(int argc, char *argv[])
 
         command_ = commandIt->second;
 
-        if(command == COMMAND_TYPE::ENCRYPT || COMMAND_TYPE::DECRYPT)
+        if(command_ == COMMAND_TYPE::ENCRYPT || command_ == COMMAND_TYPE::DECRYPT)
         {
             if(outputFile_.empty())
             {
@@ -64,12 +64,9 @@ void ProgramOptions::Parse(int argc, char *argv[])
             }
         }
 
-        if(command_ == COMMAND_TYPE::CHECKSUM)
+        if(command_ == COMMAND_TYPE::CHECKSUM && !outputFile_.empty())
         {
-            if(!outputFile_.empty())
-            {
-                throw std::runtime_error{"Output file is not needed for checksum"};
-            }
+            throw std::runtime_error{"Output file is not needed for checksum"};
         }
     } 
     catch(const po::error& e)
