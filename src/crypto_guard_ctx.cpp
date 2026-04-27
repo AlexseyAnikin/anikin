@@ -26,7 +26,22 @@ namespace
         }
     };
 
-    using EvpCipherCtxDeleter = std::unique_ptr<EVP_MD_CTX, EvpMdCtxDeleter>;
+    struct EvpMdCtxDeleter
+    {
+        void operator()(EVP_MD_CTX* ctx) const noexcept
+        {
+            if(ctx != nullptr)
+            {
+                EVP_MD_CTX_free(ctx);
+            }
+        }
+    };
+    
+
+    using EvpCipherCtxDeleter = std::unique_ptr<EVP_MD_CTX, EvpCipherCtxDeleter>;
+    using EvpMdCtxPtr = std::unique_ptr<EVP_MD_CTX, EvpMdCtxDeleter>;
+
+    
 
     EvpMdCtxPtr MakeMdCtx()
     {
