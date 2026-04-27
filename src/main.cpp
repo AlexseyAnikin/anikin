@@ -1,10 +1,7 @@
 #include "cmd_options.h"
 #include "crypto_guard_ctx.h"
 
-#include <algorithm>
-#include <array>
-#include <iostream>
-#include <openssl/evp.h>
+#include <fstream>
 #include <print>
 #include <stdexcept>
 #include <string>
@@ -19,20 +16,7 @@ struct AesCipherParams {
     std::array<unsigned char, IV_SIZE> iv;    // Initialization vector
 };
 
-AesCipherParams CreateChiperParamsFromPassword(std::string_view password) {
-    AesCipherParams params;
-    constexpr std::array<unsigned char, 8> salt = {'1', '2', '3', '4', '5', '6', '7', '8'};
 
-    int result = EVP_BytesToKey(params.cipher, EVP_sha256(), salt.data(),
-                                reinterpret_cast<const unsigned char *>(password.data()), password.size(), 1,
-                                params.key.data(), params.iv.data());
-
-    if (result == 0) {
-        throw std::runtime_error{"Failed to create a key from password"};
-    }
-
-    return params;
-}
 
 int main(int argc, char *argv[]) {
     try {
@@ -147,7 +131,7 @@ int main(int argc, char *argv[]) {
         {
             const std::string checkSum = cryptoCtx.CalculateChecksum(inputFile);
 
-            std::print("Checksum: {}\n", "CHECKSUM_NOT_IMPLEMENTED");
+            std::print("Checksum: {}\n", checkSum");
             break;
         }
 
