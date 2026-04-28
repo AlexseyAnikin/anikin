@@ -55,7 +55,7 @@ void ProgramOptions::Parse(int argc, char* argv[])
         {
             if(outputFile_.empty())
             {
-                throw std::runtime_error{"Outout file is required for encrypt/decrypt"};
+                throw std::runtime_error{"Output file is required for encrypt/decrypt"};
             }
 
             if(password_.empty())

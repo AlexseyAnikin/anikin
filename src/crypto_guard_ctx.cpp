@@ -17,7 +17,7 @@ namespace
 {
     struct EvpCipherCtxDeleter
     {
-        void opertator()(EVP_CIPHER_CTX* ctx) const noexcept
+        void operator()(EVP_CIPHER_CTX* ctx) const noexcept
         {
             if(ctx != nullptr)
             {
@@ -38,7 +38,7 @@ namespace
     };
     
 
-    using EvpCipherCtxPtr = std::unique_ptr<EVP_MD_CTX, EvpCipherCtxDeleter>;
+    using EvpCipherCtxPtr = std::unique_ptr<EVP_CIPHER_CTX, EvpCipherCtxDeleter>;
     using EvpMdCtxPtr = std::unique_ptr<EVP_MD_CTX, EvpMdCtxDeleter>;
 
     EvpCipherCtxPtr MakeCipherCtx()
@@ -87,7 +87,7 @@ namespace
         constexpr std::array<unsigned char, 8> salt = {'1', '2', '3', '4', '5', '6', '7', '8'};
 
         const int result = EVP_BytesToKey
-        {
+        (
             params.cipher,
             EVP_sha256(),
             salt.data(),
@@ -96,7 +96,7 @@ namespace
             1,
             params.key.data(),
             params.iv.data()
-        };
+        );
 
         if(result == 0)
         {
@@ -179,7 +179,7 @@ public:
         }
 
         std::ostringstream result;
-        result << std::hex << std::setFill('0');
+        result << std::hex << std::setfill('0');
 
         for(unsigned int i = 0; i < digestLen; ++i)
         {
@@ -219,7 +219,7 @@ private:
         {
             inStream.read(
                 reinterpret_cast<char*>(inBuffer.data()),
-                static_cast<std::streamsize>(inBuffer.data())
+                static_cast<std::streamsize>(inBuffer.size())
             );
 
             const std::streamsize bytesRead = inStream.gcount();
@@ -238,7 +238,7 @@ private:
                     inBuffer.data(),
                     static_cast<int>(bytesRead)) != 1)
                     {
-                        throw std::runtime_error{"EVP_CipherUpdate failed"}
+                        throw std::runtime_error{"EVP_CipherUpdate failed"};
                     }
 
             outStream.write(

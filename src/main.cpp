@@ -2,9 +2,10 @@
 #include "crypto_guard_ctx.h"
 
 #include <fstream>
-#include <print>
+#include <iostream>
 #include <stdexcept>
 #include <string>
+#include <iostream>
 
 
 
@@ -46,7 +47,7 @@ int main(int argc, char *argv[]) {
                 options.GetPassword()
             );
  
-            std::print("File encoded successfully\n");
+            std::cout << "File encoded successfully\n";
             break;
         }
 
@@ -68,7 +69,7 @@ int main(int argc, char *argv[]) {
                 options.GetPassword()
             );
 
-            std::print("File decoded successfully\n");
+            std::cout << "File decoded successfully\n";
             break;
         }
 
@@ -76,7 +77,7 @@ int main(int argc, char *argv[]) {
         {
             const std::string checkSum = cryptoCtx.CalculateChecksum(inputFile);
 
-            std::print("Checksum: {}\n", checkSum");
+            std::cout << "Checksum: " << checkSum << '\n';
             break;
         }
 
@@ -85,7 +86,7 @@ int main(int argc, char *argv[]) {
         }
 
     } catch (const std::exception &e) {
-        std::print(std::cerr, "Error: {}\n", e.what());
+        std::cerr << "Error: " << e.what() << '\n';
         return 1;
     }
 
